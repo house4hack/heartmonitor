@@ -1,6 +1,5 @@
 package za.co.house4hack.heartmonitor;
 
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -17,12 +16,11 @@ import org.achartengine.model.XYMultipleSeriesDataset;
 import org.achartengine.renderer.XYMultipleSeriesRenderer;
 import org.achartengine.renderer.XYSeriesRenderer;
 
-
-
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.res.Configuration;
@@ -31,11 +29,12 @@ import android.graphics.Paint.Align;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.os.PowerManager;
+import android.os.PowerManager.WakeLock;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
-import android.view.View;
 import android.view.Window;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -65,7 +64,6 @@ public class HeartRateMonitorActivity extends Activity {
 	int[] colors = new int[] { Color.BLUE };
 	PointStyle[] styles = new PointStyle[] { PointStyle.CIRCLE };
 
-	
 	private static final double DEFAULTWINDOW = 10 * 60 * 1000;
 
 	// Name of the connected device
@@ -73,6 +71,7 @@ public class HeartRateMonitorActivity extends Activity {
 	private TextView mTitle;
 	private List<String> mReceived;
 	private boolean mRunning;
+	private WakeLock mWakeLock;
 
 	/** Called when the activity is first created. */
 	@Override
@@ -80,8 +79,7 @@ public class HeartRateMonitorActivity extends Activity {
 		super.onCreate(savedInstanceState);
 		requestWindowFeature(Window.FEATURE_CUSTOM_TITLE);
 		setContentView(R.layout.main);
-		getWindow().setFeatureInt(Window.FEATURE_CUSTOM_TITLE,
-				R.layout.custom_title);
+		getWindow().setFeatureInt(Window.FEATURE_CUSTOM_TITLE, R.layout.custom_title);
 
 		setContentView(R.layout.main);
 		LinearLayout ll = (LinearLayout) findViewById(R.id.linearlayout);
@@ -104,8 +102,7 @@ public class HeartRateMonitorActivity extends Activity {
 
 		// If the adapter is null, then Bluetooth is not supported
 		if (mBluetoothAdapter == null) {
-			Toast.makeText(this, "Bluetooth is not available",
-					Toast.LENGTH_LONG).show();
+			Toast.makeText(this, "Bluetooth is not available", Toast.LENGTH_LONG).show();
 			finish();
 			return;
 		}
@@ -120,14 +117,19 @@ public class HeartRateMonitorActivity extends Activity {
 		// If BT is not on, request that it be enabled.
 		// setupChat() will then be called during onActivityResult
 		if (!mBluetoothAdapter.isEnabled()) {
-			Intent enableIntent = new Intent(
-					BluetoothAdapter.ACTION_REQUEST_ENABLE);
+			Intent enableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
 			startActivityForResult(enableIntent, REQUEST_ENABLE_BT);
 			// Otherwise, setup the chat session
 		} else {
 			if (mService == null)
 				setupChat();
 		}
+		if(mWakeLock == null){
+			PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
+			mWakeLock = pm.newWakeLock(PowerManager.SCREEN_DIM_WAKE_LOCK | PowerManager.ON_AFTER_RELEASE, "My Tag");
+			mWakeLock.acquire();
+		}
+		
 	}
 
 	@Override
@@ -146,7 +148,7 @@ public class HeartRateMonitorActivity extends Activity {
 			}
 		}
 	}
-	
+
 	@Override
 	public void onConfigurationChanged(Configuration newConfig) {
 		super.onConfigurationChanged(newConfig);
@@ -167,6 +169,8 @@ public class HeartRateMonitorActivity extends Activity {
 
 	@Override
 	public void onStop() {
+		mWakeLock.release();
+		mWakeLock = null;
 		super.onStop();
 	}
 
@@ -186,11 +190,9 @@ public class HeartRateMonitorActivity extends Activity {
 			// When DeviceListActivity returns with a device to connect
 			if (resultCode == Activity.RESULT_OK) {
 				// Get the device MAC address
-				String address = data.getExtras().getString(
-						DeviceListActivity.EXTRA_DEVICE_ADDRESS);
+				String address = data.getExtras().getString(DeviceListActivity.EXTRA_DEVICE_ADDRESS);
 				// Get the BLuetoothDevice object
-				BluetoothDevice device = mBluetoothAdapter
-						.getRemoteDevice(address);
+				BluetoothDevice device = mBluetoothAdapter.getRemoteDevice(address);
 				// Attempt to connect to the device
 				mService.connect(device);
 			}
@@ -207,20 +209,15 @@ public class HeartRateMonitorActivity extends Activity {
 
 	public void finishDialogNoBluetooth() {
 		AlertDialog.Builder builder = new AlertDialog.Builder(this);
-		builder.setMessage(R.string.alert_dialog_no_bt)
-				.setIcon(android.R.drawable.ic_dialog_info)
-				.setTitle(R.string.app_name)
-				.setCancelable(false)
-				.setPositiveButton(R.string.alert_dialog_ok,
-						new DialogInterface.OnClickListener() {
-							public void onClick(DialogInterface dialog, int id) {
-								finish();
-							}
-						});
+		builder.setMessage(R.string.alert_dialog_no_bt).setIcon(android.R.drawable.ic_dialog_info).setTitle(R.string.app_name).setCancelable(false)
+				.setPositiveButton(R.string.alert_dialog_ok, new DialogInterface.OnClickListener() {
+					public void onClick(DialogInterface dialog, int id) {
+						finish();
+					}
+				});
 		AlertDialog alert = builder.create();
 		alert.show();
 	}
-
 
 	private void updateData() {
 		if (mService != null) {
@@ -249,8 +246,7 @@ public class HeartRateMonitorActivity extends Activity {
 				switch (msg.arg1) {
 				case BluetoothService.STATE_CONNECTED:
 					if (mMenuItemConnect != null) {
-						mMenuItemConnect
-								.setIcon(android.R.drawable.ic_menu_close_clear_cancel);
+						mMenuItemConnect.setIcon(android.R.drawable.ic_menu_close_clear_cancel);
 						mMenuItemConnect.setTitle(R.string.disconnect);
 					}
 
@@ -266,8 +262,7 @@ public class HeartRateMonitorActivity extends Activity {
 				case BluetoothService.STATE_LISTEN:
 				case BluetoothService.STATE_NONE:
 					if (mMenuItemConnect != null) {
-						mMenuItemConnect
-								.setIcon(android.R.drawable.ic_menu_search);
+						mMenuItemConnect.setIcon(android.R.drawable.ic_menu_search);
 						mMenuItemConnect.setTitle(R.string.connect);
 					}
 
@@ -287,14 +282,10 @@ public class HeartRateMonitorActivity extends Activity {
 			case MESSAGE_DEVICE_NAME:
 				// save the connected device's name
 				mConnectedDeviceName = msg.getData().getString(DEVICE_NAME);
-				Toast.makeText(getApplicationContext(),
-						"Connected to " + mConnectedDeviceName,
-						Toast.LENGTH_SHORT).show();
+				Toast.makeText(getApplicationContext(), "Connected to " + mConnectedDeviceName, Toast.LENGTH_SHORT).show();
 				break;
 			case MESSAGE_TOAST:
-				Toast.makeText(getApplicationContext(),
-						msg.getData().getString(TOAST), Toast.LENGTH_SHORT)
-						.show();
+				Toast.makeText(getApplicationContext(), msg.getData().getString(TOAST), Toast.LENGTH_SHORT).show();
 				break;
 			}
 		}
@@ -326,9 +317,9 @@ public class HeartRateMonitorActivity extends Activity {
 			}
 			return true;
 		case R.id.run:
-			
-				setRunning(!mRunning);
-			
+
+			setRunning(!mRunning);
+
 		}
 		return false;
 	}
@@ -338,8 +329,7 @@ public class HeartRateMonitorActivity extends Activity {
 		mRenderer = buildRenderer(colors, styles);
 		int length = mRenderer.getSeriesRendererCount();
 		for (int i = 0; i < length; i++) {
-			((XYSeriesRenderer) mRenderer.getSeriesRendererAt(i))
-					.setFillPoints(true);
+			((XYSeriesRenderer) mRenderer.getSeriesRendererAt(i)).setFillPoints(true);
 		}
 		mRenderer.setXLabels(12);
 		mRenderer.setYLabels(10);
@@ -350,20 +340,17 @@ public class HeartRateMonitorActivity extends Activity {
 		mRenderer.setPanEnabled(true, true);
 		mRenderer.setZoomEnabled(true, true);
 
-		GraphicalView result = ChartFactory.getTimeChartView(this, mDataset,
-				mRenderer, "h:mm:ss");
+		GraphicalView result = ChartFactory.getTimeChartView(this, mDataset, mRenderer, "h:mm:ss");
 		return result;
 	}
 
-	protected XYMultipleSeriesRenderer buildRenderer(int[] colors,
-			PointStyle[] styles) {
+	protected XYMultipleSeriesRenderer buildRenderer(int[] colors, PointStyle[] styles) {
 		XYMultipleSeriesRenderer renderer = new XYMultipleSeriesRenderer();
 		setRenderer(renderer, colors, styles);
 		return renderer;
 	}
 
-	protected void setRenderer(XYMultipleSeriesRenderer renderer, int[] colors,
-			PointStyle[] styles) {
+	protected void setRenderer(XYMultipleSeriesRenderer renderer, int[] colors, PointStyle[] styles) {
 		renderer.setAxisTitleTextSize(16);
 		renderer.setChartTitleTextSize(20);
 		renderer.setLabelsTextSize(15);
@@ -379,10 +366,8 @@ public class HeartRateMonitorActivity extends Activity {
 		}
 	}
 
-	protected void setChartSettings(XYMultipleSeriesRenderer renderer,
-			String title, String xTitle, String yTitle, double xMin,
-			double xMax, double yMin, double yMax, int axesColor,
-			int labelsColor) {
+	protected void setChartSettings(XYMultipleSeriesRenderer renderer, String title, String xTitle, String yTitle, double xMin, double xMax, double yMin, double yMax,
+			int axesColor, int labelsColor) {
 		renderer.setChartTitle(title);
 		renderer.setXTitle(xTitle);
 		renderer.setYTitle(yTitle);
@@ -428,8 +413,7 @@ public class HeartRateMonitorActivity extends Activity {
 				try {
 					String[] parts = readData.trim().split(",");
 					if (parts.length == TIMESERIESCOUNT + 1) {
-						SimpleDateFormat sdf = new SimpleDateFormat(
-								"yyyy-MM-dd HH:mm:ss");
+						SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 						Date date = sdf.parse(parts[0]);
 						for (int i = 0; i < TIMESERIESCOUNT; i++) {
 							double val = Double.parseDouble(parts[i + 1]);
@@ -440,25 +424,20 @@ public class HeartRateMonitorActivity extends Activity {
 								min = val;
 						}
 					}
-
-					mRenderer.setXAxisMax(mSeries[0].getMaxX());
-					if(mSeries[0].getMaxX()- mSeries[0].getMinX() > DEFAULTWINDOW){
-						mRenderer
-						.setXAxisMin(mSeries[0].getMaxX() - DEFAULTWINDOW);	
-					} else {
-						mRenderer
-						.setXAxisMin(mSeries[0].getMinX());
-						
-					}
-					
-					mRenderer.setYAxisMax(max);
-					mRenderer.setYAxisMin(min);
-					chart.repaint();
-				} catch (ParseException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				} finally {
+				} catch (Exception e) {
 				}
+
+				mRenderer.setXAxisMax(mSeries[0].getMaxX());
+				if (mSeries[0].getMaxX() - mSeries[0].getMinX() > DEFAULTWINDOW) {
+					mRenderer.setXAxisMin(mSeries[0].getMaxX() - DEFAULTWINDOW);
+				} else {
+					mRenderer.setXAxisMin(mSeries[0].getMinX());
+
+				}
+
+				mRenderer.setYAxisMax(max);
+				mRenderer.setYAxisMin(min);
+				chart.repaint();
 			}
 		}
 
@@ -475,9 +454,10 @@ public class HeartRateMonitorActivity extends Activity {
 		}, 0, 5000);
 
 	}
-	
-	public void stopTimer(){
-		if(mTimer !=null) mTimer.cancel();
+
+	public void stopTimer() {
+		if (mTimer != null)
+			mTimer.cancel();
 	}
 
 	public boolean ismRunning() {
@@ -486,13 +466,13 @@ public class HeartRateMonitorActivity extends Activity {
 
 	public void setRunning(boolean mRunning) {
 		this.mRunning = mRunning;
-		if(mMenuItemRun!=null){
-			if(mRunning){
+		if (mMenuItemRun != null) {
+			if (mRunning) {
 				mMenuItemRun.setTitle(getString(R.string.stop));
-				//updateData();
+				// updateData();
 				updateData();
 				startTimer();
-			} else{
+			} else {
 				mMenuItemRun.setTitle(getString(R.string.run));
 				stopTimer();
 			}
