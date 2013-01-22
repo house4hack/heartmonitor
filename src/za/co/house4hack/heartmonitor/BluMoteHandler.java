@@ -1,4 +1,4 @@
-package za.co.house4hack.temperaturemonitor;
+package za.co.house4hack.heartmonitor;
 
 import android.app.Activity;
 import android.os.Handler;

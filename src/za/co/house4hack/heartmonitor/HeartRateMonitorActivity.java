@@ -1,4 +1,4 @@
-package za.co.house4hack.temperaturemonitor;
+package za.co.house4hack.heartmonitor;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -17,7 +17,7 @@ import org.achartengine.model.XYMultipleSeriesDataset;
 import org.achartengine.renderer.XYMultipleSeriesRenderer;
 import org.achartengine.renderer.XYSeriesRenderer;
 
-import za.co.house4hack.energymonitor.R;
+
 
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -41,7 +41,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-public class TemperatureMonitorActivity extends Activity {
+public class HeartRateMonitorActivity extends Activity {
 	private static final String TAG = "BlueTemp";
 	private GraphicalView chart;
 	private TimeSeries mSeries[];
@@ -61,7 +61,11 @@ public class TemperatureMonitorActivity extends Activity {
 	// Key names received from the BluetoothChatService Handler
 	public static final String DEVICE_NAME = "device_name";
 	public static final String TOAST = "toast";
-	private static final int TIMESERIESCOUNT = 4;
+	private static final int TIMESERIESCOUNT = 1;
+	int[] colors = new int[] { Color.BLUE };
+	PointStyle[] styles = new PointStyle[] { PointStyle.CIRCLE };
+
+	
 	private static final double DEFAULTWINDOW = 10 * 60 * 1000;
 
 	// Name of the connected device
@@ -81,7 +85,7 @@ public class TemperatureMonitorActivity extends Activity {
 
 		setContentView(R.layout.main);
 		LinearLayout ll = (LinearLayout) findViewById(R.id.linearlayout);
-		mSeries = new TimeSeries[4];
+		mSeries = new TimeSeries[TIMESERIESCOUNT];
 		mDataset = new XYMultipleSeriesDataset();
 
 		for (int i = 0; i < TIMESERIESCOUNT; i++) {
@@ -331,10 +335,6 @@ public class TemperatureMonitorActivity extends Activity {
 
 	public GraphicalView getChart() {
 
-		int[] colors = new int[] { Color.BLUE, Color.RED, Color.WHITE,
-				Color.YELLOW };
-		PointStyle[] styles = new PointStyle[] { PointStyle.CIRCLE,
-				PointStyle.CIRCLE, PointStyle.CIRCLE, PointStyle.CIRCLE };
 		mRenderer = buildRenderer(colors, styles);
 		int length = mRenderer.getSeriesRendererCount();
 		for (int i = 0; i < length; i++) {
@@ -489,7 +489,7 @@ public class TemperatureMonitorActivity extends Activity {
 		if(mMenuItemRun!=null){
 			if(mRunning){
 				mMenuItemRun.setTitle(getString(R.string.stop));
-				updateData();
+				//updateData();
 				updateData();
 				startTimer();
 			} else{

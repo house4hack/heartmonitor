@@ -14,11 +14,13 @@
  * limitations under the License.
  */
 
-package za.co.house4hack.temperaturemonitor;
+package za.co.house4hack.heartmonitor;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
@@ -90,7 +92,7 @@ public class BluetoothService {
 		mState = state;
 
 		// Give the new state to the Handler so the UI Activity can update
-		mHandler.obtainMessage(TemperatureMonitorActivity.MESSAGE_STATE_CHANGE,
+		mHandler.obtainMessage(HeartRateMonitorActivity.MESSAGE_STATE_CHANGE,
 				state, -1).sendToTarget();
 	}
 
@@ -185,9 +187,9 @@ public class BluetoothService {
 
 		// Send the name of the connected device back to the UI Activity
 		Message msg = mHandler
-				.obtainMessage(TemperatureMonitorActivity.MESSAGE_DEVICE_NAME);
+				.obtainMessage(HeartRateMonitorActivity.MESSAGE_DEVICE_NAME);
 		Bundle bundle = new Bundle();
-		bundle.putString(TemperatureMonitorActivity.DEVICE_NAME, device.getName());
+		bundle.putString(HeartRateMonitorActivity.DEVICE_NAME, device.getName());
 		msg.setData(bundle);
 		mHandler.sendMessage(msg);
 
@@ -242,9 +244,9 @@ public class BluetoothService {
 
 		// Send a failure message back to the Activity
 		Message msg = mHandler
-				.obtainMessage(TemperatureMonitorActivity.MESSAGE_TOAST);
+				.obtainMessage(HeartRateMonitorActivity.MESSAGE_TOAST);
 		Bundle bundle = new Bundle();
-		bundle.putString(TemperatureMonitorActivity.TOAST,
+		bundle.putString(HeartRateMonitorActivity.TOAST,
 				"Unable to connect device");
 		msg.setData(bundle);
 		mHandler.sendMessage(msg);
@@ -258,9 +260,9 @@ public class BluetoothService {
 
 		// Send a failure message back to the Activity
 		Message msg = mHandler
-				.obtainMessage(TemperatureMonitorActivity.MESSAGE_TOAST);
+				.obtainMessage(HeartRateMonitorActivity.MESSAGE_TOAST);
 		Bundle bundle = new Bundle();
-		bundle.putString(TemperatureMonitorActivity.TOAST,
+		bundle.putString(HeartRateMonitorActivity.TOAST,
 				"Device connection was lost");
 		msg.setData(bundle);
 		mHandler.sendMessage(msg);
@@ -367,6 +369,8 @@ public class BluetoothService {
 			Log.i(TAG, "BEGIN mConnectedThread");
 			byte[] buffer = new byte[1024];
 			int bytes;
+			SimpleDateFormat sdf = new SimpleDateFormat(
+					"yyyy-MM-dd HH:mm:ss");
 
 			// Keep listening to the InputStream while connected
 			while (true) {
@@ -380,21 +384,21 @@ public class BluetoothService {
 					synchronized (mReceived) {
 
 						if (parts.length > 1) {
-							mReceived.add(recbuf);
+							mReceived.add(sdf.format(new Date())+","+recbuf);
 							recbuf = "";
 
 							for (int i = 1; i < parts.length - 1; i++) {
-								mReceived.add(parts[i]);
+								mReceived.add(sdf.format(new Date())+","+parts[i]);
 							}
 							recbuf = parts[parts.length - 1];
 						} else {
 							if (recbuf.endsWith("\n")) {
-								mReceived.add(recbuf);
+								mReceived.add(sdf.format(new Date())+","+recbuf);
 								recbuf = "";
 							}
 						}
 					}
-					mHandler.obtainMessage(TemperatureMonitorActivity.MESSAGE_READ)
+					mHandler.obtainMessage(HeartRateMonitorActivity.MESSAGE_READ)
 							.sendToTarget();
 
 				} catch (IOException e) {
@@ -416,7 +420,7 @@ public class BluetoothService {
 				mmOutStream.write(buffer);
 
 				// Share the sent message back to the UI Activity
-				mHandler.obtainMessage(TemperatureMonitorActivity.MESSAGE_WRITE,
+				mHandler.obtainMessage(HeartRateMonitorActivity.MESSAGE_WRITE,
 						buffer.length, -1, buffer).sendToTarget();
 			} catch (IOException e) {
 				Log.e(TAG, "Exception during write", e);

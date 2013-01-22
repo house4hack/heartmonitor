@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-package za.co.house4hack.temperaturemonitor;
+package za.co.house4hack.heartmonitor;
 
 import java.util.Set;
 
-import za.co.house4hack.energymonitor.R;
+
 
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;

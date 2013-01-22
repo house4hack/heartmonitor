@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Temperature Monitor</string>
+    <string name="app_name">Heart Monitor</string>
     <string name="run_button">Run</string>
     <string name="con_button">Connect</string>
     
