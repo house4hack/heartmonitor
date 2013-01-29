@@ -6,6 +6,8 @@ boolean dump=false;
 //  VARIABLES
 int pulsePin = 1;                 // Pulse Sensor purple wire connected to analog pin 0
 int blinkPin = 13;                // pin to blink led at each beat
+double smoothedBPM = 0;
+#define EXP 0.05
 
 // these variables are volatile because they are used during the interrupt service routine!
 volatile int BPM;                   // used to hold the pulse rate
@@ -23,7 +25,15 @@ void setup(){
 
 void loop(){
   if (QS == true){                       // Quantified Self flag is true when arduino finds a heartbeat
-        dataString = String(BPM);
+        //dataString = String(BPM);
+        if(smoothedBPM == 0) {
+          smoothedBPM = BPM;
+        } else {  
+          smoothedBPM = smoothedBPM*(1-EXP) + EXP*BPM;
+        }  
+        int v = smoothedBPM;
+        dataString = String(v);
+
         QS = false;                      // reset the Quantified Self flag for next time    
      }
   

@@ -61,7 +61,7 @@ public class HeartRateMonitorActivity extends Activity {
 	public static final String DEVICE_NAME = "device_name";
 	public static final String TOAST = "toast";
 	private static final int TIMESERIESCOUNT = 1;
-	int[] colors = new int[] { Color.BLUE };
+	int[] colors = new int[] { Color.YELLOW };
 	PointStyle[] styles = new PointStyle[] { PointStyle.CIRCLE };
 
 	private static final double DEFAULTWINDOW = 10 * 60 * 1000;
@@ -361,6 +361,7 @@ public class HeartRateMonitorActivity extends Activity {
 		for (int i = 0; i < length; i++) {
 			XYSeriesRenderer r = new XYSeriesRenderer();
 			r.setColor(colors[i]);
+			r.setLineWidth(12);
 			r.setPointStyle(styles[i]);
 			renderer.addSeriesRenderer(r);
 		}
