@@ -9,3 +9,7 @@ The pulse sensor is connected to ground, 3.3V, and the sensor wire to A1.
 
 For standard bluetooth protocols for Polar, Zephyr, ANT+, see:
 http://code.google.com/p/mytracks/source/browse/MyTracks/src/com/google/android/apps/mytracks/services/sensors/
+
+TODO:
+- Logging as a service
+- Sony watch integration
